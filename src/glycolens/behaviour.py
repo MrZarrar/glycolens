@@ -1,36 +1,13 @@
 from datetime import timedelta
 from statistics import fmean
 
-from glycolens.findings import Finding, by_window, consistent, exercise_spans, user_boluses
+from glycolens.findings import Finding, consistent, exercise_spans
 from glycolens.model import Data
 from glycolens.series import Series
-from glycolens.windows import window_of
 
-RISE = 3.0  # mmol/L within an hour
-RISE_SPAN = timedelta(hours=1)
-REFRACTORY = timedelta(hours=3)
 AFTER_EXERCISE = timedelta(hours=6)
 EXERCISE_SHARE = 0.5
 SITE_DIFF = 1.5
-
-
-def missed_bolus(data: Data, series: Series, windows) -> list[Finding]:
-    user = user_boluses(data)
-    hits, last = [], None
-    for t, v in zip(series.ts, series.v):
-        later = series.at(t + RISE_SPAN, tol=timedelta(minutes=5))
-        if later is None or later - v < RISE or (last and t - last < REFRACTORY):
-            continue
-        if any(t - RISE_SPAN <= o.ts <= t + RISE_SPAN for o in user):
-            continue
-        hits.append((t, v, later))
-        last = t
-    out = []
-    for window, group in by_window(hits, lambda h: window_of(h[0], windows).name).items():
-        if len(group) >= 2:
-            out.append(Finding("missed_bolus", window, "", len(group), len(group), float(len(group)),
-                               tuple(f"{t:%a %d %b %H:%M}: {v:.1f} → {u:.1f} in an hour, no bolus" for t, v, u in group)))
-    return out
 
 
 def exercise_low(data: Data, series: Series) -> list[Finding]:

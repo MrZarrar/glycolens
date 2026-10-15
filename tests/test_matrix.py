@@ -11,7 +11,6 @@ EXPECTED = {
     "lunch_lows": {("carb_ratio", "lunch", "weaker")},
     "strong_isf": {("isf", "dinner", "weaker")},
     "night_basal_low": {("basal", "overnight", "stronger")},
-    "missed_bolus": {("missed_bolus", "late", "")},
     "exercise_lows": {("exercise_low", "all", "")},
     "site_day3": {("site_age", "all", "")},
 }

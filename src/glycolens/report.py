@@ -28,8 +28,6 @@ def finding_text(f: Finding) -> str:
         return f"{w}: corrections dropped {f.metric:.1f}x what your correction factor predicts ({f.hits} of {f.events})."
     if f.rule == "basal":
         return f"{w}: on {f.hits} of {f.events} fasting days basal ran at {f.metric:.0%} of programmed or glucose drifted."
-    if f.rule == "missed_bolus":
-        return f"{w}: {f.hits} rises of 3+ mmol/L in an hour with no bolus logged."
     if f.rule == "exercise_low":
         return f"Lows after {f.hits} of {f.events} exercise sessions (lowest {f.metric:.1f})."
     return f"Glucose ran {f.metric:.1f} mmol/L higher from day 3 of a site."

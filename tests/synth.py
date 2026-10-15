@@ -16,7 +16,7 @@ LATE_BOLUS_MEAL = [(0, 0.0), (60, 5.0), (240, 0.5), (300, 0.0)]
 LOW_MEAL = [(0, 0.0), (45, 1.0), (180, -3.3), (240, -1.5), (330, 0.0)]
 
 FAULTS = ("weak_breakfast", "late_prebolus", "lunch_lows", "strong_isf", "night_basal_low",
-          "missed_bolus", "exercise_lows", "site_day3")
+          "exercise_lows", "site_day3")
 
 
 def _bump(off: dict, t0: datetime, shape: list[tuple[int, float]]) -> None:
@@ -45,8 +45,6 @@ def make(fault: str | None = None) -> Data:
             drop = 3.2 if fault == "strong_isf" else 2.0
             _bump(off, d.replace(hour=16), [(0, 0.0), (180, 4.0), (360, 4.0 - drop), (450, 0.0)])
             boluses.append(Bolus(d.replace(hour=19), 1.0, 0.0, "correction", 10.0, 2.0))
-        if fault == "missed_bolus" and day in (1, 3, 5):
-            _bump(off, d.replace(hour=22, minute=30), [(0, 0.0), (60, 4.0), (120, 0.0)])
         if fault == "exercise_lows" and odd:
             events += [Event(d.replace(hour=21, minute=30), "exercise_start"),
                        Event(d.replace(hour=22, minute=30), "exercise_end")]

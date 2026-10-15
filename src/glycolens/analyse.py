@@ -12,7 +12,6 @@ def analyse(data: Data, windows) -> list[Finding]:
         *meals.pre_bolus(ms),
         *corrections.isf(data, series, windows),
         *basal.basal(data, series, windows),
-        *behaviour.missed_bolus(data, series, windows),
         *behaviour.exercise_low(data, series),
         *behaviour.site_age(data, series),
     ]

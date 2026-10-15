@@ -4,12 +4,6 @@ from glycolens.series import Series
 from glycolens.windows import DEFAULT_WINDOWS
 
 
-def test_missed_boluses_found_late_evening():
-    d = synth.make("missed_bolus")
-    (f,) = behaviour.missed_bolus(d, Series(d.glucose), DEFAULT_WINDOWS)
-    assert (f.rule, f.window, f.hits) == ("missed_bolus", "late", 3)
-
-
 def test_exercise_lows_found():
     d = synth.make("exercise_lows")
     (f,) = behaviour.exercise_low(d, Series(d.glucose))

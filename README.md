@@ -17,7 +17,7 @@ Weekly: `scripts/register-weekly.ps1` (Sundays 20:00).
 ## How it decides
 
 Deterministic rules over 14 days of data (carb ratio, correction factor, basal vs Control-IQ delivery,
-pre-bolus timing, missed boluses, exercise lows, site age). Guardrails: lows win, steps of at most 10%,
+pre-bolus timing, exercise lows, site age). Guardrails: lows win, steps of at most 10%,
 one change per window at a time, at least 4 qualifying events, 70% CGM coverage. A local LLM may reword
 the summary; any number it did not get from the findings discards its text.
 
