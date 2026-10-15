@@ -24,3 +24,12 @@ def test_drop_folder_imports_and_moves(tmp_path):
     assert len(got) == 1 and len(got[0][1].glucose) == 2
     glooko.mark_imported(got[0][0])
     assert (tmp_path / "imported" / "export.zip").exists() and (tmp_path / "broken.zip.failed").exists()
+
+
+def test_a_second_export_with_the_same_name_imports_too(tmp_path):
+    for _ in range(2):  # Glooko names every export the same; Windows rename refuses to overwrite
+        with zipfile.ZipFile(tmp_path / "export.zip", "w") as z:
+            z.writestr("cgm_data_1.csv", CSV_MMOL)
+        ((path, _),) = glooko.import_drop(tmp_path)
+        glooko.mark_imported(path)
+    assert (tmp_path / "imported" / "export.zip").exists() and not (tmp_path / "export.zip").exists()

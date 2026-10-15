@@ -24,8 +24,6 @@ def finding_text(f: Finding) -> str:
     if f.rule == "pre_bolus":
         return (f"{w}: {f.hits} of {f.events} meals spiked (median +{f.metric:.1f}) then came back down. "
                 f"The ratio looks right; bolus earlier.")
-    if f.rule == "isf" and f.metric < 0:
-        return f"{w}: glucose rose instead of dropping after corrections ({f.hits} of {f.events})."
     if f.rule == "isf":
         return f"{w}: corrections dropped {f.metric:.1f}x what your correction factor predicts ({f.hits} of {f.events})."
     if f.rule == "basal":

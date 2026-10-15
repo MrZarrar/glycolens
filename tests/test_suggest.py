@@ -6,7 +6,7 @@ import synth
 from glycolens.analyse import analyse
 from glycolens.findings import Finding
 from glycolens.series import Series
-from glycolens.stats import window_summary
+from glycolens.stats import summary, window_summary
 from glycolens.suggest import current_settings, decide, step
 from glycolens.windows import DEFAULT_WINDOWS
 
@@ -98,3 +98,10 @@ def test_lows_in_the_next_window_block_a_stronger_change(window, next_window):
     ws[next_window] = {**ws[next_window], "tbr": 6.0}
     sugg, watching = decide([f("basal", window, "stronger")], ws, cur, set(), "w")
     assert sugg == [] and watching[0].reason == "lows in the next window"
+
+
+def test_a_next_window_without_cgm_data_blocks_a_stronger_change():
+    _, ws, cur = inputs(None)
+    ws["breakfast"] = summary([], 60)
+    sugg, watching = decide([f("basal", "overnight", "stronger")], ws, cur, set(), "w")
+    assert sugg == [] and watching[0].reason == "too little CGM data in the next window"

@@ -51,3 +51,10 @@ def test_invented_number_is_rejected(server):
 
 def test_lm_studio_down_gives_none():
     assert narrate.summarise(REPORT, "http://127.0.0.1:9", "qwen", timeout=2) is None
+
+
+def test_summary_cannot_borrow_numbers_from_evidence_to_invert_advice():
+    r = {**REPORT, "findings": [{"text": "Breakfast: 5 of 6 meals ended high", "evidence": ["Mon 11 Jan 07:00 45g"]}],
+         "suggestions": [{"id": "2026-W02-breakfast-carb_ratio", "text": "Breakfast: consider strengthening your "
+                          "carb ratio from 10 to 9 g/U (10%).", "evidence": ["Mon 11 Jan 07:00 45g"]}]}
+    assert not narrate.numbers_ok("Weaken your breakfast carb ratio to 11 g/U.", narrate.source(r))

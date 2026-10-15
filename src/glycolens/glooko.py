@@ -1,5 +1,6 @@
 """Glooko 'Export to CSV' zip, dropped into ~/.glycolens/drop/ by hand. CGM only."""
 import csv
+import os
 import sys
 import zipfile
 from datetime import datetime
@@ -46,11 +47,11 @@ def import_drop(folder: Path) -> list[tuple[Path, Data]]:
             out.append((path, read_zip(path)))
         except (zipfile.BadZipFile, ValueError, StopIteration) as e:
             print(f"glycolens: could not read {path.name}: {e}", file=sys.stderr)
-            path.rename(path.with_name(path.name + ".failed"))
+            os.replace(path, path.with_name(path.name + ".failed"))  # Glooko reuses names
     return out
 
 
 def mark_imported(path: Path) -> None:
     done = path.parent / "imported"
     done.mkdir(exist_ok=True)
-    path.rename(done / path.name)
+    os.replace(path, done / path.name)  # Glooko names every export the same

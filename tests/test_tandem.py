@@ -89,3 +89,13 @@ def test_cgm_high_and_low_readings_count_at_the_sensor_limits():
     d = tandem.to_data([ev("LidCgmDataG7", currentGlucoseDisplayValue=0, glucoseValueStatusRaw=1),
                         ev("LidCgmDataG7", currentGlucoseDisplayValue=0, glucoseValueStatusRaw=2)])
     assert [g.mmol for g in d.glucose] == [22.2, 2.2]
+
+
+def test_aborted_or_alarm_stopped_bolus_does_not_judge_settings():
+    # An occlusion that stops a 6 U bolus at 2 U is not evidence about the carb ratio.
+    d = tandem.to_data([
+        ev("LidBolusRequestedMsg1", bolusId=12, carbAmount=60, bolusTypeRaw=1, carbRatioRaw=10000),
+        ev("LidBolusRequestedMsg2", bolusId=12, isf=36),
+        ev("LidBolusCompleted", bolusId=12, insulinDelivered=2.0, insulinRequested=6.0, completionStatusRaw=1),
+    ])
+    assert d.boluses == [Bolus(T, 2.0, 60.0, "meal", 10.0, 2.0, overridden=True)]

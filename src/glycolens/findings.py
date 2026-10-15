@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from glycolens.model import Bolus, Data
+from glycolens.windows import window_of
 
 
 @dataclass(frozen=True)
@@ -21,6 +22,15 @@ def consistent(hits: int, events: int, share: float) -> bool:
 
 def user_boluses(data: Data) -> list[Bolus]:
     return [b for b in data.boluses if b.kind != "auto"]
+
+
+def latest(boluses: list[Bolus], windows, attr: str) -> dict[str, float]:
+    """The newest calculator value of `attr` (carb_ratio or isf) per window: the setting in force now."""
+    out = {}
+    for b in sorted(boluses, key=lambda b: b.ts):
+        if getattr(b, attr) > 0:
+            out[window_of(b.ts, windows).name] = getattr(b, attr)
+    return out
 
 
 def exercise_spans(data: Data) -> list[tuple[datetime, datetime]]:

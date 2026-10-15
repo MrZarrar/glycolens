@@ -17,6 +17,7 @@ CARB_RATIO_SCALE = 1000  # carbRatioRaw 7000 → 7 g/U
 ISF_IS_MGDL = True  # LidBolusRequestedMsg2.isf is mg/dL per U
 AUTO_BOLUS_TYPE = 2  # LidBolusRequestedMsg1.bolusTypeRaw "Automatic Correction" (Control-IQ); an enum, not bits
 USER_OVERRIDE = 1  # LidBolusRequestedMsg2.userOverrideRaw: the user changed the calculated dose
+BOLUS_DONE = 3  # LidBolusCompleted.completionStatusRaw "Completed" (0 aborted, 1 alarm, 2 malfunction)
 CANNULA_OK = 3  # LidCannulaFilled.completionStatusRaw "Completed"
 GLUCOSE_OK = 0  # glucoseValueStatusRaw "precise value"
 SENSOR_LIMITS = {1: 22.2, 2: 2.2}  # "Special High" / "Special Low": the G7 shows HIGH / LOW
@@ -63,14 +64,16 @@ def to_data(events: Iterable) -> Data:
             r["isf"] = e.isf / MG_PER_MMOL if ISF_IS_MGDL else float(e.isf)
             r["overridden"] = getattr(e, "userOverrideRaw", 0) == USER_OVERRIDE
         elif name == "LidBolusCompleted":
-            completed.append((_ts(e), e.bolusId, e.insulinDelivered))
+            whole = (getattr(e, "completionStatusRaw", BOLUS_DONE) == BOLUS_DONE
+                     and e.insulinDelivered >= getattr(e, "insulinRequested", e.insulinDelivered) - 0.05)
+            completed.append((_ts(e), e.bolusId, e.insulinDelivered, whole))
         elif name == "LidBasalDelivery":
             out.basal.append(Basal(_ts(e), e.profileBasalRate / 1000, e.commandedRate / 1000))
         elif name == "LidCannulaFilled" and e.completionStatusRaw == CANNULA_OK:
             out.events.append(Event(_ts(e), "site_change"))
         elif name == "LidAaUserModeChange":
             out.events += _mode_events(e)
-    for ts, bolus_id, units in completed:
+    for ts, bolus_id, units, whole in completed:
         if units <= 0:
             continue
         r = requests.get(bolus_id)
@@ -79,7 +82,7 @@ def to_data(events: Iterable) -> Data:
             continue
         kind = "meal" if r["carbs"] > 0 else "correction"
         out.boluses.append(Bolus(ts, round(units, 2), r["carbs"], kind, round(r["cr"], 1), round(r.get("isf", 0.0), 1),
-                                  r.get("overridden", False)))
+                                  r.get("overridden", False) or not whole))
     return out
 
 

@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import time
+from datetime import time, timedelta
 
 import synth
 from glycolens import meals
@@ -45,3 +45,13 @@ def test_meals_dosed_by_override_do_not_judge_the_ratio():
     data = synth.make("weak_breakfast")
     data.boluses = [replace(b, overridden=True) for b in data.boluses]
     assert run(data) == set()
+
+
+def test_only_meals_dosed_with_the_current_ratio_count():
+    # After a change from 10 to 9 g/U, meals dosed at 10 say nothing about 9.
+    data = synth.make("weak_breakfast")
+    late = synth.START + timedelta(days=10)
+    data.boluses = [replace(b, carb_ratio=9.0) if b.ts >= late else b for b in data.boluses]
+    ms = meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS)
+    (f,) = meals.carb_ratio(ms)
+    assert f.events == 4

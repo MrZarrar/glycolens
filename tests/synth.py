@@ -15,7 +15,7 @@ WEAK_MEAL = [(0, 0.0), (60, 3.5), (240, 3.0), (420, 0.0)]
 LATE_BOLUS_MEAL = [(0, 0.0), (60, 5.0), (240, 0.5), (300, 0.0)]
 LOW_MEAL = [(0, 0.0), (45, 1.0), (180, -3.3), (240, -1.5), (330, 0.0)]
 
-FAULTS = ("weak_breakfast", "late_prebolus", "lunch_lows", "strong_isf", "night_basal_low",
+FAULTS = ("weak_breakfast", "late_prebolus", "lunch_lows", "strong_isf", "weak_isf", "night_basal_low",
           "exercise_lows")
 
 
@@ -42,7 +42,7 @@ def make(fault: str | None = None) -> Data:
         if odd:
             _meal(off, boluses, d.replace(hour=18, minute=30), 70, CLEAN_MEAL)
         else:
-            drop = 3.2 if fault == "strong_isf" else 2.0
+            drop = {"strong_isf": 3.2, "weak_isf": 1.2}.get(fault, 2.0)
             _bump(off, d.replace(hour=16), [(0, 0.0), (180, 4.0), (480, 4.0 - drop), (570, 0.0)])
             boluses.append(Bolus(d.replace(hour=19), 1.0, 0.0, "correction", 10.0, 2.0))
         if fault == "exercise_lows" and odd:

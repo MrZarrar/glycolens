@@ -1,9 +1,8 @@
 from dataclasses import dataclass
 from statistics import median
 
-from glycolens.findings import Finding, user_boluses
+from glycolens.findings import Finding, latest, user_boluses
 from glycolens.model import Data
-from glycolens.windows import window_of
 
 SETTINGS = ("carb_ratio", "isf", "basal")
 STEP = 0.10
@@ -38,13 +37,8 @@ def step(setting: str, direction: str, current: float) -> float:
 
 
 def current_settings(data: Data, windows) -> dict[tuple[str, str], float]:
-    cur: dict[tuple[str, str], float] = {}
-    for b in sorted(user_boluses(data), key=lambda b: b.ts):
-        w = window_of(b.ts, windows).name
-        if b.carb_ratio > 0:
-            cur[(w, "carb_ratio")] = b.carb_ratio
-        if b.isf > 0:
-            cur[(w, "isf")] = b.isf
+    user = user_boluses(data)
+    cur = {(w, s): v for s in ("carb_ratio", "isf") for w, v in latest(user, windows, s).items()}
     for w in windows:
         # ponytail: median of programmed rates that start inside the window; a window with no rate
         # change of its own reports "current setting unknown". Upgrade: carry the rate in force.
@@ -79,6 +73,8 @@ def decide(findings: list[Finding], window_stats: dict[str, dict], current: dict
             reason = f"only {f.events} qualifying events"
         elif f.direction == "stronger" and _lows(st):
             reason = "lows in this window"
+        elif f.direction == "stronger" and window_stats[_next(window_stats, f.window)]["coverage"] < MIN_COVERAGE:
+            reason = "too little CGM data in the next window"
         elif f.direction == "stronger" and _lows(window_stats[_next(window_stats, f.window)]):
             reason = "lows in the next window"  # insulin keeps acting for up to 5 h
         elif f.window in taken:

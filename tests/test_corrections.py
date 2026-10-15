@@ -1,4 +1,5 @@
 from dataclasses import replace
+from datetime import timedelta
 
 import synth
 from glycolens.corrections import isf
@@ -33,3 +34,18 @@ def test_overridden_zero_carb_boluses_are_not_scored_as_corrections():
     data = synth.make("strong_isf")
     data.boluses = [replace(b, overridden=True) if b.kind == "correction" else b for b in data.boluses]
     assert run(data) == []
+
+
+def test_a_rise_after_a_correction_is_not_evidence_about_isf():
+    # Glucose going up after insulin means food, the site or illness, not a weak correction factor.
+    data = synth.make()
+    data.boluses = [replace(b, isf=0.5) if b.kind == "correction" else b for b in data.boluses]
+    rising = {b.ts for b in data.boluses if b.kind == "correction"}
+    data.glucose = [replace(g, mmol=g.mmol + 3.0) if any(t < g.ts <= t + timedelta(hours=5) for t in rising) else g
+                    for g in data.glucose]
+    assert run(data) == []
+
+
+def test_corrections_that_fall_short_ask_for_a_stronger_isf():
+    (f,) = run(synth.make("weak_isf"))
+    assert (f.rule, f.window, f.direction) == ("isf", "dinner", "stronger")

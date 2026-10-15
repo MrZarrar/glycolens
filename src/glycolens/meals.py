@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from statistics import median
 
-from glycolens.findings import Finding, by_window, consistent, user_boluses
+from glycolens.findings import Finding, by_window, consistent, latest, user_boluses
 from glycolens.model import Data
 from glycolens.series import Series
 from glycolens.windows import window_of
@@ -32,9 +32,12 @@ class Meal:
 
 def meals(data: Data, series: Series, windows) -> list[Meal]:
     user = user_boluses(data)
+    now = latest(user, windows, "carb_ratio")  # meals dosed with an older ratio say nothing about it
     out = []
     for b in user:
-        if b.carbs_g <= 0 or b.overridden or any(o is not b and b.ts < o.ts < b.ts + HORIZON for o in user):
+        if b.carbs_g <= 0 or b.overridden or b.carb_ratio != now.get(window_of(b.ts, windows).name):
+            continue
+        if any(o is not b and b.ts < o.ts < b.ts + HORIZON for o in user):
             continue
         start, end = series.at(b.ts), series.at(b.ts + HORIZON)
         early = series.between(b.ts, b.ts + timedelta(minutes=90))

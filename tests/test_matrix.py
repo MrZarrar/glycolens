@@ -10,6 +10,7 @@ EXPECTED = {
     "late_prebolus": {("pre_bolus", "breakfast", "")},
     "lunch_lows": {("carb_ratio", "lunch", "weaker")},
     "strong_isf": {("isf", "dinner", "weaker")},
+    "weak_isf": {("isf", "dinner", "stronger")},
     "night_basal_low": {("basal", "overnight", "stronger")},
     "exercise_lows": {("exercise_low", "all", "")},
 }

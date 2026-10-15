@@ -67,12 +67,6 @@ def test_markdown_is_summary_only(tmp_path):
     assert note.parent == tmp_path / "inbox" and note.read_text(encoding="utf-8") == md
 
 
-def test_correction_text_says_rose_when_glucose_went_up():
-    from glycolens.findings import Finding
-    text = report.finding_text(Finding("isf", "breakfast", "stronger", 3, 3, -0.6, ()))
-    assert "rose" in text and "-0.6" not in text
-
-
 def test_possible_sensor_lows_are_listed():
     r = make_report()
     assert r["possible_sensor_lows"] == []
