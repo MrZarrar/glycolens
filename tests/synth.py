@@ -43,7 +43,7 @@ def make(fault: str | None = None) -> Data:
             _meal(off, boluses, d.replace(hour=18, minute=30), 70, CLEAN_MEAL)
         else:
             drop = 3.2 if fault == "strong_isf" else 2.0
-            _bump(off, d.replace(hour=16), [(0, 0.0), (180, 4.0), (360, 4.0 - drop), (450, 0.0)])
+            _bump(off, d.replace(hour=16), [(0, 0.0), (180, 4.0), (480, 4.0 - drop), (570, 0.0)])
             boluses.append(Bolus(d.replace(hour=19), 1.0, 0.0, "correction", 10.0, 2.0))
         if fault == "exercise_lows" and odd:
             events += [Event(d.replace(hour=21, minute=30), "exercise_start"),

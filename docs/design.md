@@ -77,7 +77,7 @@ Weekly baseline: TIR 3.9–10, TBR (<3.9, <3.0), TAR (>10, >13.9), GMI, CV, hour
 | Rule | Qualifying events | Pattern |
 |---|---|---|
 | Carb ratio | Meal bolus with carbs, no other carbs/bolus in following 4 h | ≥ 70% of qualifying meals in the window end > 2.0 mmol/L above start at 4 h (too weak), or go < 3.9 within 4 h (too strong) |
-| ISF | `correction` boluses: no carbs ±2 h, not `auto`, no exercise mode | Median actual drop ÷ expected (units × ISF) over 3 h is > 1.3 (too strong) or < 0.7 (too weak) |
+| ISF | `correction` boluses: no carbs ±2 h, not `auto`, no exercise mode, calculator not overridden | Median actual drop ÷ expected (units × ISF) over 5 h (the insulin duration) is > 1.3 (too strong) or < 0.7 (too weak) |
 | Basal | Fasting windows (no carbs/bolus in prior 4 h), mostly overnight | Control-IQ delivered basal consistently ≥ 25% above or below programmed in the window (glucose drift alone is not used: late digestion, exercise and illness look the same) |
 | Behaviour | All | Spike ≥ 4 mmol/L by 1 h but back within 2 mmol/L of start at 4 h → pre-bolus timing (not ratio); < 3.9 within 6 h after exercise mode; mean glucose on site day 3+ ≥ 1.5 mmol/L above days 1–2 |
 

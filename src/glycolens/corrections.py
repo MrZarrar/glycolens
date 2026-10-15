@@ -6,7 +6,7 @@ from glycolens.model import Data
 from glycolens.series import Series
 from glycolens.windows import window_of
 
-HORIZON = timedelta(hours=3)
+HORIZON = timedelta(hours=5)  # the pump's insulin duration: at 3 h only ~70% of the drop has happened
 NO_CARBS = timedelta(hours=2)
 TOO_STRONG = 1.3
 TOO_WEAK = 0.7
