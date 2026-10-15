@@ -96,3 +96,14 @@ def test_cli_output_survives_a_piped_windows_console(tmp_path):
                            "mark-applied", "2026-W03-breakfast-carb_ratio"], capture_output=True, env=env)
     assert done.returncode == 0, done.stderr.decode(errors="replace")
     assert "→" in done.stdout.decode("utf-8")
+
+
+def test_run_lists_a_recovered_sensor_plunge(tmp_path):
+    from glycolens.model import Glucose
+    d = synth.make()
+    t = synth.START + timedelta(days=3, hours=14)
+    gap = {t - timedelta(minutes=m) for m in (5, 10, 15)}
+    d.glucose = [Glucose(g.ts, 2.4) if g.ts == t else g for g in d.glucose if g.ts not in gap]
+    pipeline.run(cfg(tmp_path), fetch=lambda c: d, narrate=no_summary, now=NOW)
+    r = json.loads((tmp_path / "report.json").read_text())
+    assert r["possible_sensor_lows"] == [t.isoformat(timespec="seconds")]

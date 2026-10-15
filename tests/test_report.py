@@ -71,3 +71,16 @@ def test_correction_text_says_rose_when_glucose_went_up():
     from glycolens.findings import Finding
     text = report.finding_text(Finding("isf", "breakfast", "stronger", 3, 3, -0.6, ()))
     assert "rose" in text and "-0.6" not in text
+
+
+def test_possible_sensor_lows_are_listed():
+    r = make_report()
+    assert r["possible_sensor_lows"] == []
+    d = synth.make()
+    r = report.build(now=END, start=synth.START, end=END, through=END, stale_since=None,
+                     stats=summary([g.mmol for g in d.glucose], synth.DAYS * 1440),
+                     window_stats={w.name: summary([], 60) for w in DEFAULT_WINDOWS}, agp=[], findings=[],
+                     suggestions=[], statuses={}, watching=[], changes=[], windows=DEFAULT_WINDOWS,
+                     sensor_lows=[synth.START + timedelta(hours=21)])
+    assert r["possible_sensor_lows"] == ["2026-01-05T21:00:00"]
+    assert "Possible sensor lows" in report.to_markdown({**r, "summary": ""})

@@ -68,3 +68,12 @@ def test_overridden_flag_round_trips_and_old_stores_are_migrated(tmp_path):
     store.save(conn, Data(boluses=[b]))
     assert store.load(conn, T - timedelta(hours=1), T + timedelta(hours=1)).boluses == [b]
     store.open_store(tmp_path / "g.db")  # reopening an up-to-date store is fine
+
+
+def test_load_drops_a_low_right_before_a_dead_sensor(tmp_path):
+    conn = store.open_store(tmp_path / "g.db")
+    readings = [Glucose(T + timedelta(minutes=m), 5.9) for m in range(0, 80, 5)]
+    low, new_sensor = Glucose(T + timedelta(minutes=96), 2.2), Glucose(T + timedelta(hours=23), 6.0)
+    store.save(conn, Data(glucose=readings + [low, new_sensor]))
+    got = store.load(conn, T, T + timedelta(days=1))
+    assert low not in got.glucose and new_sensor in got.glucose

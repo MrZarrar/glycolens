@@ -133,6 +133,14 @@ Windows Task Scheduler on the home PC runs `glycolens run` weekly (Sunday evenin
 as possible after a missed start". Registering the task is an owner-run deploy step, per Noctis's
 rule against registering services without approval.
 
+## Sensor artefacts
+
+A sensor peeling off or pressed on plunges straight down out of a choppy patch, while a real low falls
+through continuous readings. A run below 3.9 that starts at least 2.0 below the reading before it, with
+2 or more of the 6 readings missing in the 30 min before, is a plunge. If no reading follows for 2 h (the
+sensor died), the plunge is removed from the data. Otherwise it is kept as a real low everywhere,
+including the lows guard, and listed in the report as a possible sensor low.
+
 ## Error handling
 
 - Fetch failure (login, API change): analyse what is already stored; report sets `stale_since`;

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from glycolens.model import Basal, Bolus, Data, Event, Glucose
+from glycolens.sensor import sensor_lows
 
 SCHEMA = """
 create table if not exists glucose(bucket text primary key, ts text not null, mmol real not null);
@@ -60,8 +61,10 @@ def load(conn: sqlite3.Connection, start: datetime, end: datetime) -> Data:
     # ponytail: basal looks back a day for the rate already in force at `start`; a rate older than a
     # day is missed. Upgrade: select the last record before `start` explicitly.
     return Data(
-        glucose=[Glucose(when(r["ts"]), r["mmol"])
-                 for r in rows("select ts, mmol from glucose where ts >= ? and ts < ? order by ts")],
+        # Plunges into a dead sensor are false lows (sensor.py); every reader goes through here.
+        # ponytail: a dead sensor whose next reading is after `end` isn't seen as dead; the low stays (safe side).
+        glucose=sensor_lows([Glucose(when(r["ts"]), r["mmol"])
+                             for r in rows("select ts, mmol from glucose where ts >= ? and ts < ? order by ts")])[0],
         boluses=[Bolus(when(r["ts"]), r["units"], r["carbs_g"], r["kind"], r["carb_ratio"], r["isf"], bool(r["overridden"]))
                  for r in rows("select * from bolus where ts >= ? and ts < ? order by ts")],
         basal=[Basal(when(r["ts"]), r["programmed"], r["delivered"])

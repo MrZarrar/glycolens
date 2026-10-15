@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from glycolens import glooko, outcomes, report, store
 from glycolens.analyse import analyse
 from glycolens.config import Config
+from glycolens.sensor import sensor_lows
 from glycolens.series import Series
 from glycolens.stats import agp, summary, window_summary
 from glycolens.suggest import current_settings, decide
@@ -47,7 +48,7 @@ def run(cfg: Config, *, fetch, narrate, now: datetime) -> int:
                      stats=summary(series.v, (end - start) / timedelta(minutes=1)), window_stats=window_stats,
                      agp=agp(series), findings=findings, suggestions=suggestions,
                      statuses={s.id: store.get_status(conn, s.id) for s in suggestions}, watching=watching,
-                     changes=store.changes(conn), windows=cfg.windows)
+                     changes=store.changes(conn), windows=cfg.windows, sensor_lows=sensor_lows(data.glucose)[1])
     text = narrate(r, cfg)
     r["summary"], r["summary_source"] = (text, "qwen") if text else (report.template_summary(r), "template")
     report.write_json(r, cfg.home / "report.json")

@@ -42,7 +42,7 @@ def suggestion_text(s: Suggestion) -> str:
 
 def build(*, now: datetime, start: datetime, end: datetime, through: datetime, stale_since: datetime | None, stats: dict,
           window_stats: dict, agp: list, findings: list[Finding], suggestions: list[Suggestion],
-          statuses: dict, watching: list[Watching], changes: list[dict], windows) -> dict:
+          statuses: dict, watching: list[Watching], changes: list[dict], windows, sensor_lows=()) -> dict:
     return {
         "schema_version": SCHEMA_VERSION,
         "generated_at": iso(now),
@@ -64,6 +64,7 @@ def build(*, now: datetime, start: datetime, end: datetime, through: datetime, s
                          "status": statuses.get(s.id) or "proposed"} for s in suggestions],
         "watching": [{"window": w.window, "rule": w.rule, "reason": w.reason} for w in watching],
         "changes": changes,
+        "possible_sensor_lows": [iso(t) for t in sensor_lows],  # kept as real lows; shown so the owner can judge
     }
 
 
@@ -98,6 +99,8 @@ def to_markdown(r: dict) -> str:
         lines += [f"> Data stale since {r['stale_since'][:10]}.", ""]
     lines += [r["summary"], "",
               f"**Stats:** {st['tir']}% in range, {st['tbr']}% below, GMI {st['gmi']}%, CV {st['cv']}%", ""]
+    if r.get("possible_sensor_lows"):
+        lines += ["Possible sensor lows (counted as real): " + ", ".join(t[:16].replace("T", " ") for t in r["possible_sensor_lows"]), ""]
     lines += ["## Findings"] + [f"- {f['text']}" for f in r["findings"]] + [""]
     lines += ["## Suggestions"] + [f"- {s['text']} ({s['status']})" for s in r["suggestions"]] + [""]
     lines += ["## Past changes"] + [f"- {c['window']} {c['setting']} {c['current']:g} → {c['proposed']:g}: "
