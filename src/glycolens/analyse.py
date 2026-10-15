@@ -13,5 +13,4 @@ def analyse(data: Data, windows) -> list[Finding]:
         *corrections.isf(data, series, windows),
         *basal.basal(data, series, windows),
         *behaviour.exercise_low(data, series),
-        *behaviour.site_age(data, series),
     ]

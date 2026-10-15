@@ -12,7 +12,6 @@ EXPECTED = {
     "strong_isf": {("isf", "dinner", "weaker")},
     "night_basal_low": {("basal", "overnight", "stronger")},
     "exercise_lows": {("exercise_low", "all", "")},
-    "site_day3": {("site_age", "all", "")},
 }
 
 
