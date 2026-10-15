@@ -64,3 +64,11 @@ def test_window_ends_at_the_pumps_last_upload():
     pump = {"maxDateOfEvents": "2026-09-26T18:05:12"}
     assert tandem.window(pump, 14) == (date(2026, 9, 12), date(2026, 9, 26))
     assert tandem.window({"maxDateOfEvents": None}, 14)[1] == date.today()
+
+
+def test_cgm_reading_is_timed_by_the_sensor_not_by_arrival():
+    # A back-filled G7 reading reaches the pump late; egvTimeStamp (seconds since 2008-01-01, pump
+    # local time) is when it was measured. 592617669 s → 2026-10-12 00:01:09.
+    d = tandem.to_data([ev("LidCgmDataG7", currentGlucoseDisplayValue=108, glucoseValueStatusRaw=0,
+                           egvTimeStamp=592617669, ts=datetime(2026, 10, 12, 0, 40))])
+    assert [g.ts for g in d.glucose] == [datetime(2026, 10, 12, 0, 1, 9)]

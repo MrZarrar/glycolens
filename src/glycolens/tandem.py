@@ -6,7 +6,7 @@ against a real account in the Task 1 spike (see SPIKE.md).
 import getpass
 import json
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Iterable
 
 import keyring
@@ -21,8 +21,17 @@ GLUCOSE_OK = 0  # glucoseValueStatusRaw "precise value"
 EXERCISE, NORMAL = 2, 0
 
 
+PUMP_EPOCH = datetime(2008, 1, 1)  # pump clock: seconds since this, in pump local time
+
+
 def _ts(e):
     return e.eventTimestamp.naive
+
+
+def _egv_ts(e):
+    """When the sensor measured it: back-filled readings reach the pump (eventTimestamp) much later."""
+    egv = getattr(e, "egvTimeStamp", 0)
+    return PUMP_EPOCH + timedelta(seconds=egv) if egv else _ts(e)
 
 
 def _mode_events(e) -> list[Event]:
@@ -40,7 +49,7 @@ def to_data(events: Iterable) -> Data:
         name = type(e).__name__
         if name in ("LidCgmDataG7", "LidCgmDataGxb"):
             if e.glucoseValueStatusRaw == GLUCOSE_OK:
-                out.glucose.append(Glucose(_ts(e), round(e.currentGlucoseDisplayValue / MG_PER_MMOL, 2)))
+                out.glucose.append(Glucose(_egv_ts(e), round(e.currentGlucoseDisplayValue / MG_PER_MMOL, 2)))
         elif name == "LidBolusRequestedMsg1":
             requests.setdefault(e.bolusId, {}).update(
                 carbs=float(e.carbAmount), type=e.bolusTypeRaw, cr=e.carbRatioRaw / CARB_RATIO_SCALE)
