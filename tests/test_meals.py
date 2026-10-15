@@ -1,0 +1,40 @@
+from datetime import time
+
+import synth
+from glycolens import meals
+from glycolens.series import Series
+from glycolens.windows import DEFAULT_WINDOWS
+
+
+def run(data):
+    ms = meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS)
+    return {(f.rule, f.window, f.direction) for f in meals.carb_ratio(ms) + meals.pre_bolus(ms)}
+
+
+def test_clean_has_no_meal_findings():
+    assert run(synth.make()) == set()
+
+
+def test_weak_breakfast_asks_for_a_stronger_breakfast_ratio():
+    assert run(synth.make("weak_breakfast")) == {("carb_ratio", "breakfast", "stronger")}
+
+
+def test_late_prebolus_is_timing_not_ratio():
+    assert run(synth.make("late_prebolus")) == {("pre_bolus", "breakfast", "")}
+
+
+def test_lunch_lows_ask_for_a_weaker_lunch_ratio():
+    assert run(synth.make("lunch_lows")) == {("carb_ratio", "lunch", "weaker")}
+
+
+def test_meal_with_no_reading_near_four_hours_is_skipped():
+    data = synth.make("weak_breakfast")
+    data.glucose = [g for g in data.glucose if not time(10, 45) <= g.ts.time() <= time(11, 15)]
+    assert run(data) == set()
+
+
+def test_finding_carries_evidence():
+    data = synth.make("weak_breakfast")
+    ms = meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS)
+    (f,) = meals.carb_ratio(ms)
+    assert f.events == 14 and f.hits == 14 and f.metric == 3.0 and len(f.evidence) == 14
