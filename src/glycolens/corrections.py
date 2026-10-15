@@ -18,7 +18,7 @@ def isf(data: Data, series: Series, windows) -> list[Finding]:
     spans = exercise_spans(data)
     scored = []  # (window, ratio, line)
     for b in user:
-        if b.kind != "correction" or b.isf <= 0 or b.units <= 0:
+        if b.kind != "correction" or b.overridden or b.isf <= 0 or b.units <= 0:
             continue
         if any(o.carbs_g > 0 and abs(o.ts - b.ts) <= NO_CARBS for o in user):
             continue

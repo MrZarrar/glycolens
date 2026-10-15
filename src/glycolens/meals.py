@@ -34,7 +34,7 @@ def meals(data: Data, series: Series, windows) -> list[Meal]:
     user = user_boluses(data)
     out = []
     for b in user:
-        if b.carbs_g <= 0 or any(o is not b and b.ts < o.ts < b.ts + HORIZON for o in user):
+        if b.carbs_g <= 0 or b.overridden or any(o is not b and b.ts < o.ts < b.ts + HORIZON for o in user):
             continue
         start, end = series.at(b.ts), series.at(b.ts + HORIZON)
         early = series.between(b.ts, b.ts + timedelta(minutes=90))

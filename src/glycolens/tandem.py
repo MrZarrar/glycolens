@@ -16,6 +16,7 @@ from glycolens.model import MG_PER_MMOL, Basal, Bolus, Data, Event, Glucose
 CARB_RATIO_SCALE = 1000  # carbRatioRaw 7000 → 7 g/U
 ISF_IS_MGDL = True  # LidBolusRequestedMsg2.isf is mg/dL per U
 AUTO_BOLUS_TYPE = 2  # LidBolusRequestedMsg1.bolusTypeRaw "Automatic Correction" (Control-IQ); an enum, not bits
+USER_OVERRIDE = 1  # LidBolusRequestedMsg2.userOverrideRaw: the user changed the calculated dose
 CANNULA_OK = 3  # LidCannulaFilled.completionStatusRaw "Completed"
 GLUCOSE_OK = 0  # glucoseValueStatusRaw "precise value"
 EXERCISE, NORMAL = 2, 0
@@ -54,7 +55,9 @@ def to_data(events: Iterable) -> Data:
             requests.setdefault(e.bolusId, {}).update(
                 carbs=float(e.carbAmount), type=e.bolusTypeRaw, cr=e.carbRatioRaw / CARB_RATIO_SCALE)
         elif name == "LidBolusRequestedMsg2":
-            requests.setdefault(e.bolusId, {})["isf"] = e.isf / MG_PER_MMOL if ISF_IS_MGDL else float(e.isf)
+            r = requests.setdefault(e.bolusId, {})
+            r["isf"] = e.isf / MG_PER_MMOL if ISF_IS_MGDL else float(e.isf)
+            r["overridden"] = getattr(e, "userOverrideRaw", 0) == USER_OVERRIDE
         elif name == "LidBolusCompleted":
             completed.append((_ts(e), e.bolusId, e.insulinDelivered))
         elif name == "LidBasalDelivery":
@@ -71,7 +74,8 @@ def to_data(events: Iterable) -> Data:
             out.boluses.append(Bolus(ts, round(units, 2), 0.0, "auto", 0.0, 0.0))
             continue
         kind = "meal" if r["carbs"] > 0 else "correction"
-        out.boluses.append(Bolus(ts, round(units, 2), r["carbs"], kind, round(r["cr"], 1), round(r.get("isf", 0.0), 1)))
+        out.boluses.append(Bolus(ts, round(units, 2), r["carbs"], kind, round(r["cr"], 1), round(r.get("isf", 0.0), 1),
+                                  r.get("overridden", False)))
     return out
 
 

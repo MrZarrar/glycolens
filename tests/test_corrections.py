@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 import synth
 from glycolens.corrections import isf
 from glycolens.model import Bolus
@@ -23,4 +25,11 @@ def test_auto_boluses_are_never_scored_as_corrections():
     data = synth.make("strong_isf")
     data.boluses = [Bolus(b.ts, b.units, b.carbs_g, "auto", b.carb_ratio, b.isf) if b.kind == "correction" else b
                     for b in data.boluses]
+    assert run(data) == []
+
+
+def test_overridden_zero_carb_boluses_are_not_scored_as_corrections():
+    # The owner often boluses food with 0 carbs via Override Increase; the rise after it is food.
+    data = synth.make("strong_isf")
+    data.boluses = [replace(b, overridden=True) if b.kind == "correction" else b for b in data.boluses]
     assert run(data) == []

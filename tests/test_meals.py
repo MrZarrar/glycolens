@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import time
 
 import synth
@@ -38,3 +39,9 @@ def test_finding_carries_evidence():
     ms = meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS)
     (f,) = meals.carb_ratio(ms)
     assert f.events == 14 and f.hits == 14 and f.metric == 3.0 and len(f.evidence) == 14
+
+
+def test_meals_dosed_by_override_do_not_judge_the_ratio():
+    data = synth.make("weak_breakfast")
+    data.boluses = [replace(b, overridden=True) for b in data.boluses]
+    assert run(data) == set()

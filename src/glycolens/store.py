@@ -8,7 +8,8 @@ from glycolens.model import Basal, Bolus, Data, Event, Glucose
 SCHEMA = """
 create table if not exists glucose(bucket text primary key, ts text not null, mmol real not null);
 create table if not exists bolus(ts text not null, kind text not null, units real not null,
-  carbs_g real not null, carb_ratio real not null, isf real not null, primary key (ts, kind));
+  carbs_g real not null, carb_ratio real not null, isf real not null, overridden integer not null default 0,
+  primary key (ts, kind));
 create table if not exists basal(ts text primary key, programmed real not null, delivered real not null);
 create table if not exists event(ts text not null, kind text not null, primary key (ts, kind));
 create table if not exists suggestion(
@@ -25,6 +26,8 @@ def open_store(path: Path) -> sqlite3.Connection:
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
     conn.executescript(SCHEMA)
+    if "overridden" not in {r["name"] for r in conn.execute("pragma table_info(bolus)")}:  # stores made before it
+        conn.execute("alter table bolus add column overridden integer not null default 0")
     return conn
 
 
@@ -40,8 +43,10 @@ def save(conn: sqlite3.Connection, data: Data) -> None:
     with conn:
         conn.executemany("insert or ignore into glucose values (?, ?, ?)",
                          [(_bucket(g.ts), iso(g.ts), g.mmol) for g in data.glucose])
-        conn.executemany("insert or replace into bolus values (?, ?, ?, ?, ?, ?)",
-                         [(iso(b.ts), b.kind, b.units, b.carbs_g, b.carb_ratio, b.isf) for b in data.boluses])
+        conn.executemany("insert or replace into bolus (ts, kind, units, carbs_g, carb_ratio, isf, overridden)"
+                         " values (?, ?, ?, ?, ?, ?, ?)",
+                         [(iso(b.ts), b.kind, b.units, b.carbs_g, b.carb_ratio, b.isf, int(b.overridden))
+                          for b in data.boluses])
         conn.executemany("insert or replace into basal values (?, ?, ?)",
                          [(iso(b.ts), b.programmed, b.delivered) for b in data.basal])
         conn.executemany("insert or ignore into event values (?, ?)", [(iso(e.ts), e.kind) for e in data.events])
@@ -57,7 +62,7 @@ def load(conn: sqlite3.Connection, start: datetime, end: datetime) -> Data:
     return Data(
         glucose=[Glucose(when(r["ts"]), r["mmol"])
                  for r in rows("select ts, mmol from glucose where ts >= ? and ts < ? order by ts")],
-        boluses=[Bolus(when(r["ts"]), r["units"], r["carbs_g"], r["kind"], r["carb_ratio"], r["isf"])
+        boluses=[Bolus(when(r["ts"]), r["units"], r["carbs_g"], r["kind"], r["carb_ratio"], r["isf"], bool(r["overridden"]))
                  for r in rows("select * from bolus where ts >= ? and ts < ? order by ts")],
         basal=[Basal(when(r["ts"]), r["programmed"], r["delivered"])
                for r in rows("select * from basal where ts >= ? and ts < ? order by ts", start - timedelta(days=1))],

@@ -22,6 +22,7 @@ class Bolus:
     kind: BolusKind
     carb_ratio: float  # g/U used by the bolus calculator, 0 if unknown
     isf: float  # mmol/L per U used by the bolus calculator, 0 if unknown
+    overridden: bool = False  # the user changed the calculator's dose, so it doesn't test the settings
 
 
 @dataclass(frozen=True)

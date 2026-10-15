@@ -54,3 +54,17 @@ def test_load_includes_the_basal_rate_active_before_start(tmp_path):
     store.save(conn, sample())
     got = store.load(conn, T + timedelta(hours=2), T + timedelta(hours=3))
     assert got.basal == [Basal(T, 0.8, 1.1)]
+
+
+def test_overridden_flag_round_trips_and_old_stores_are_migrated(tmp_path):
+    import sqlite3
+    old = sqlite3.connect(tmp_path / "g.db")  # a store created before the overridden column existed
+    old.execute("create table bolus(ts text not null, kind text not null, units real not null, carbs_g real not null,"
+                " carb_ratio real not null, isf real not null, primary key (ts, kind))")
+    old.commit()
+    old.close()
+    conn = store.open_store(tmp_path / "g.db")
+    b = Bolus(T, 3.5, 0.0, "correction", 7.0, 2.0, overridden=True)
+    store.save(conn, Data(boluses=[b]))
+    assert store.load(conn, T - timedelta(hours=1), T + timedelta(hours=1)).boluses == [b]
+    store.open_store(tmp_path / "g.db")  # reopening an up-to-date store is fine

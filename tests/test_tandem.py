@@ -72,3 +72,13 @@ def test_cgm_reading_is_timed_by_the_sensor_not_by_arrival():
     d = tandem.to_data([ev("LidCgmDataG7", currentGlucoseDisplayValue=108, glucoseValueStatusRaw=0,
                            egvTimeStamp=592617669, ts=datetime(2026, 10, 12, 0, 40))])
     assert [g.ts for g in d.glucose] == [datetime(2026, 10, 12, 0, 1, 9)]
+
+
+def test_bolus_where_the_user_overrode_the_calculator_is_marked():
+    # Override Increase with 0 carbs is how the owner often boluses for food (SPIKE.md).
+    d = tandem.to_data([
+        ev("LidBolusRequestedMsg1", bolusId=11, carbAmount=0, bolusTypeRaw=1, carbRatioRaw=7000),
+        ev("LidBolusRequestedMsg2", bolusId=11, isf=36, userOverrideRaw=1),
+        ev("LidBolusCompleted", bolusId=11, insulinDelivered=3.5),
+    ])
+    assert d.boluses == [Bolus(T, 3.5, 0.0, "correction", 7.0, 2.0, overridden=True)]
