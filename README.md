@@ -12,7 +12,8 @@ From the repo, with the venv (`py -3.14 -m venv .venv; .\.venv\Scripts\python -m
     .\.venv\Scripts\python -m glycolens.cli mark-applied ID  # after changing the pump setting; dismiss ID / reset ID also exist
 
 Manual fallback: drop a Glooko "Export to CSV" zip into `~/.glycolens/drop/`.
-Weekly: `scripts/register-weekly.ps1` (Sundays 20:00).
+Weekly: Noctis runs it from its home node. Without Noctis, `scripts/register-weekly.ps1` registers a
+Windows Task Scheduler job (Sundays 20:00).
 
 ## How it decides
 

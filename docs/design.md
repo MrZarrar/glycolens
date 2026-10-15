@@ -129,9 +129,9 @@ the run still succeeds.
 
 ## Scheduling
 
-Windows Task Scheduler on the home PC runs `glycolens run` weekly (Sunday evening) with "run as soon
-as possible after a missed start". Registering the task is an owner-run deploy step, per Noctis's
-rule against registering services without approval.
+Noctis runs `glycolens run` weekly (Sunday evening, catching up after a missed start) from its home
+node; that job belongs to Noctis integration (Plan 2), and the owner registers nothing in Windows.
+Without Noctis, `scripts/register-weekly.ps1` registers the same schedule in Windows Task Scheduler.
 
 ## Sensor artefacts
 
