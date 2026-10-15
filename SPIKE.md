@@ -17,3 +17,15 @@ Field names, scales, units and status codes only. No readings, doses or settings
 - Basal (`LidBasalDelivery`): `profileBasalRate`, `commandedRate`, `algorithmRate` are in milli-units/h (÷ 1000 = U/h). `tempRate == 65535` means no temp rate. `commandedRateSourceRaw`: 0 Suspended, 1 Profile, 2 Temp Rate, 3 Algorithm.
 - CGM (`LidCgmDataG7`): `currentGlucoseDisplayValue` is in mg/dL. `glucoseValueStatusRaw`: 0 Precise, 1 Special High, 2 Special Low, 6 Do Not Show. `cgmDataTypeRaw` bit 0 = five-minute reading, bit 1 = backfill.
 - Every event carries `seqNum` (a monotonic pump sequence number), which is a natural de-duplication key.
+
+## Acceptance (2026-10-15, owner's real data)
+
+Stats match Tandem Source's own report for the same fortnight within about 2 points (TIR, TBR, GMI, CV, CGM use).
+Corrections made after the first real run:
+
+- CGM time comes from `LidCgmDataG7.egvTimeStamp`: seconds since 2008-01-01, pump local time (`timestampRaw` uses the same epoch). Back-filled readings reach the pump late, and `eventTimestamp` is their arrival time. Using `eventTimestamp` lost about 10% of readings.
+- `glucoseValueStatusRaw` 1/2 (G7 shows HIGH/LOW) count as 22.2 / 2.2 mmol/L instead of being dropped.
+- `LidBolusRequestedMsg2.userOverrideRaw == 1` means the user changed the calculated dose. The owner often boluses food as an Override Increase with 0 carbs. Overridden boluses don't judge carb ratio or correction factor.
+- Correction factor is scored at 5 h, the pump's insulin duration.
+- Rules dropped because they inferred a cause from glucose alone (food, illness and anaerobic exercise look the same): missed bolus, site age, and basal judged on glucose drift.
+- Open: the owner trains on weekday evenings without exercise mode, so dinner and late findings may be confounded.
