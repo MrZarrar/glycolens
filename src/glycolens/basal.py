@@ -8,7 +8,6 @@ from glycolens.series import Series
 FAST_BEFORE = timedelta(hours=4)
 HIGH_RATIO = 1.25
 LOW_RATIO = 0.75
-DRIFT = 1.5
 SHARE = 0.7
 
 
@@ -45,9 +44,9 @@ def basal(data: Data, series: Series, windows) -> list[Finding]:
             n += 1
             ratios.append(ratio)
             line = f"{a:%a %d %b} {w.name}: basal ran at {ratio:.0%} of programmed, glucose {ga:.1f} → {gb:.1f}"
-            if ratio >= HIGH_RATIO or gb - ga > DRIFT:
+            if ratio >= HIGH_RATIO:
                 under.append(line)
-            elif ratio <= LOW_RATIO or gb - ga < -DRIFT:
+            elif ratio <= LOW_RATIO:
                 over.append(line)
         if n and consistent(len(over), n, SHARE):
             out.append(Finding("basal", w.name, "weaker", n, len(over), round(median(ratios), 2), tuple(over)))

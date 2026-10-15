@@ -29,3 +29,10 @@ def test_delivered_ratio_is_time_weighted():
 
 def test_exercise_nights_are_not_fasting():
     assert run(synth.make("exercise_lows")) == []
+
+
+def test_glucose_drift_alone_is_not_a_basal_finding():
+    # A rise with basal delivered as programmed could be late digestion, exercise or illness.
+    data = synth.make("night_basal_low")
+    data.basal = [Basal(b.ts, b.programmed, b.programmed) for b in data.basal]
+    assert run(data) == []
