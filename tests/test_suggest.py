@@ -89,3 +89,12 @@ def test_behaviour_findings_never_become_suggestions():
 ])
 def test_step_is_at_most_ten_percent_in_the_right_direction(setting, direction, current, expected):
     assert step(setting, direction, current) == expected
+
+
+@pytest.mark.parametrize("window,next_window", [("overnight", "breakfast"), ("late", "overnight")])
+def test_lows_in_the_next_window_block_a_stronger_change(window, next_window):
+    # Insulin keeps acting for up to 5 h, so more basal late in a window lands in the next one.
+    _, ws, cur = inputs(None)
+    ws[next_window] = {**ws[next_window], "tbr": 6.0}
+    sugg, watching = decide([f("basal", window, "stronger")], ws, cur, set(), "w")
+    assert sugg == [] and watching[0].reason == "lows in the next window"

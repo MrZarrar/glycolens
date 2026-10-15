@@ -54,6 +54,15 @@ def current_settings(data: Data, windows) -> dict[tuple[str, str], float]:
     return cur
 
 
+def _lows(st: dict) -> bool:
+    return st["tbr"] > LOW_TBR or st["min"] < SEVERE_MIN
+
+
+def _next(window_stats: dict, name: str) -> str:
+    names = list(window_stats)  # in time order; the last window runs into the first
+    return names[(names.index(name) + 1) % len(names)]
+
+
 def decide(findings: list[Finding], window_stats: dict[str, dict], current: dict, measuring: set[str],
            week_id: str) -> tuple[list[Suggestion], list[Watching]]:
     order = sorted((f for f in findings if f.rule in SETTINGS),
@@ -68,8 +77,10 @@ def decide(findings: list[Finding], window_stats: dict[str, dict], current: dict
             reason = "insufficient CGM data"
         elif f.events < MIN_EVENTS:
             reason = f"only {f.events} qualifying events"
-        elif f.direction == "stronger" and (st["tbr"] > LOW_TBR or st["min"] < SEVERE_MIN):
+        elif f.direction == "stronger" and _lows(st):
             reason = "lows in this window"
+        elif f.direction == "stronger" and _lows(window_stats[_next(window_stats, f.window)]):
+            reason = "lows in the next window"  # insulin keeps acting for up to 5 h
         elif f.window in taken:
             reason = "one change per window per week"
         elif cur is None:

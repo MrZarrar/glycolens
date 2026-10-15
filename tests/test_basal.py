@@ -2,7 +2,7 @@ from datetime import datetime
 
 import synth
 from glycolens.basal import basal, delivered_ratio
-from glycolens.model import Basal
+from glycolens.model import Basal, Glucose
 from glycolens.series import Series
 from glycolens.windows import DEFAULT_WINDOWS
 
@@ -35,4 +35,11 @@ def test_glucose_drift_alone_is_not_a_basal_finding():
     # A rise with basal delivered as programmed could be late digestion, exercise or illness.
     data = synth.make("night_basal_low")
     data.basal = [Basal(b.ts, b.programmed, b.programmed) for b in data.basal]
+    assert run(data) == []
+
+
+def test_nights_that_start_high_are_not_basal_tests():
+    # Starting at 11+ measures Control-IQ bringing the evening down, not whether basal is right.
+    data = synth.make("night_basal_low")
+    data.glucose = [Glucose(g.ts, g.mmol + 5.0) for g in data.glucose]
     assert run(data) == []

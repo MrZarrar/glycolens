@@ -9,6 +9,7 @@ FAST_BEFORE = timedelta(hours=4)
 HIGH_RATIO = 1.25
 LOW_RATIO = 0.75
 SHARE = 0.7
+IN_RANGE = (3.9, 10.0)  # glucose at the window's start for it to count
 
 
 def delivered_ratio(records: list[Basal], a: datetime, b: datetime) -> float | None:
@@ -41,6 +42,8 @@ def basal(data: Data, series: Series, windows) -> list[Finding]:
             ga, gb, ratio = series.at(a), series.at(b), delivered_ratio(data.basal, a, b)
             if ga is None or gb is None or ratio is None:
                 continue
+            if not IN_RANGE[0] <= ga <= IN_RANGE[1]:
+                continue  # starting high or low tests Control-IQ's clean-up, not basal
             n += 1
             ratios.append(ratio)
             line = f"{a:%a %d %b} {w.name}: basal ran at {ratio:.0%} of programmed, glucose {ga:.1f} → {gb:.1f}"

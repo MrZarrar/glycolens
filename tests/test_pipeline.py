@@ -82,3 +82,17 @@ def test_config_defaults_and_windows(tmp_path):
     p.write_text('region = "US"\n[[windows]]\nname = "all"\nstart = "00:00"\nend = "24:00"\n')
     c = load_config(p)
     assert c.region == "US" and [w.name for w in c.windows] == ["all"]
+
+
+def test_cli_output_survives_a_piped_windows_console(tmp_path):
+    # Noctis and the scheduled task read glycolens through a pipe, where Windows defaults to cp1252.
+    import os
+    import subprocess
+    import sys
+    pipeline.run(cfg(tmp_path), fetch=lambda c: synth.make("weak_breakfast"), narrate=no_summary, now=NOW)
+    (tmp_path / "c.toml").write_text(f'home = "{tmp_path.as_posix()}"\n')
+    env = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+    done = subprocess.run([sys.executable, "-m", "glycolens.cli", "--config", str(tmp_path / "c.toml"),
+                           "mark-applied", "2026-W03-breakfast-carb_ratio"], capture_output=True, env=env)
+    assert done.returncode == 0, done.stderr.decode(errors="replace")
+    assert "→" in done.stdout.decode("utf-8")

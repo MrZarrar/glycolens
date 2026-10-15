@@ -1,4 +1,5 @@
 import argparse
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -17,6 +18,8 @@ def main(argv=None) -> int:
     for name in STATUS:
         sub.add_parser(name).add_argument("id")
     a = p.parse_args(argv)
+    for stream in (sys.stdout, sys.stderr):  # piped on Windows (Noctis, Task Scheduler) they default to cp1252
+        stream.reconfigure(encoding="utf-8")
     cfg = load_config(a.config)
     if a.cmd == "run":
         return pipeline.run(cfg, fetch=tandem.fetch, narrate=narrate.for_config, now=datetime.now())
