@@ -19,6 +19,7 @@ AUTO_BOLUS_TYPE = 2  # LidBolusRequestedMsg1.bolusTypeRaw "Automatic Correction"
 USER_OVERRIDE = 1  # LidBolusRequestedMsg2.userOverrideRaw: the user changed the calculated dose
 CANNULA_OK = 3  # LidCannulaFilled.completionStatusRaw "Completed"
 GLUCOSE_OK = 0  # glucoseValueStatusRaw "precise value"
+SENSOR_LIMITS = {1: 22.2, 2: 2.2}  # "Special High" / "Special Low": the G7 shows HIGH / LOW
 EXERCISE, NORMAL = 2, 0
 
 
@@ -49,8 +50,11 @@ def to_data(events: Iterable) -> Data:
     for e in events:
         name = type(e).__name__
         if name in ("LidCgmDataG7", "LidCgmDataGxb"):
-            if e.glucoseValueStatusRaw == GLUCOSE_OK:
+            status = e.glucoseValueStatusRaw
+            if status == GLUCOSE_OK:
                 out.glucose.append(Glucose(_egv_ts(e), round(e.currentGlucoseDisplayValue / MG_PER_MMOL, 2)))
+            elif status in SENSOR_LIMITS:
+                out.glucose.append(Glucose(_egv_ts(e), SENSOR_LIMITS[status]))
         elif name == "LidBolusRequestedMsg1":
             requests.setdefault(e.bolusId, {}).update(
                 carbs=float(e.carbAmount), type=e.bolusTypeRaw, cr=e.carbRatioRaw / CARB_RATIO_SCALE)

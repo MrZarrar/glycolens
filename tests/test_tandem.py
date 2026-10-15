@@ -82,3 +82,10 @@ def test_bolus_where_the_user_overrode_the_calculator_is_marked():
         ev("LidBolusCompleted", bolusId=11, insulinDelivered=3.5),
     ])
     assert d.boluses == [Bolus(T, 3.5, 0.0, "correction", 7.0, 2.0, overridden=True)]
+
+
+def test_cgm_high_and_low_readings_count_at_the_sensor_limits():
+    # G7 shows HIGH above 22.2 and LOW below 2.2; dropping them would hide the worst lows.
+    d = tandem.to_data([ev("LidCgmDataG7", currentGlucoseDisplayValue=0, glucoseValueStatusRaw=1),
+                        ev("LidCgmDataG7", currentGlucoseDisplayValue=0, glucoseValueStatusRaw=2)])
+    assert [g.mmol for g in d.glucose] == [22.2, 2.2]
