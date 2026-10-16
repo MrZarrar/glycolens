@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from statistics import median
 
-from glycolens.findings import Finding, by_window, consistent, latest, user_boluses
+from glycolens.findings import Finding, by_window, consistent, latest, trace, user_boluses
 from glycolens.model import Data
 from glycolens.series import Series
 from glycolens.windows import window_of
@@ -24,6 +24,7 @@ class Meal:
     peak: float
     end: float
     nadir: float  # lowest reading within 4 h
+    points: tuple = ()  # [[minutes after the bolus, mmol]] for 4 h, for graphs
 
     @property
     def low(self) -> bool:
@@ -44,7 +45,8 @@ def meals(data: Data, series: Series, windows) -> list[Meal]:
         if start is None or end is None or not early:
             continue
         span = series.between(b.ts, b.ts + HORIZON + timedelta(minutes=1))
-        out.append(Meal(b.ts, window_of(b.ts, windows).name, b.carbs_g, start, max(early), end, min(span)))
+        out.append(Meal(b.ts, window_of(b.ts, windows).name, b.carbs_g, start, max(early), end, min(span),
+                        tuple(trace(series, b.ts, 240))))
     return out
 
 
@@ -56,6 +58,10 @@ def _line(m: Meal) -> str:
     return f"{m.ts:%a %d %b %H:%M} {m.carbs:g}g: {m.start:.1f} → peak {m.peak:.1f} → {m.end:.1f} at 4h"
 
 
+def _traces(ms: list[Meal], hits: list[Meal]) -> tuple[dict, ...]:
+    return tuple({"t0": m.ts, "hit": m in hits, "carbs": m.carbs, "points": list(m.points)} for m in ms)
+
+
 def carb_ratio(ms: list[Meal]) -> list[Finding]:
     out = []
     for window, group in by_window(ms, lambda m: m.window).items():
@@ -64,10 +70,11 @@ def carb_ratio(ms: list[Meal]) -> list[Finding]:
         highs = [m for m in rest if not m.low and m.end - m.start > HIGH_END]
         if rest and consistent(len(lows), len(rest), LOW_SHARE):
             out.append(Finding("carb_ratio", window, "weaker", len(rest), len(lows),
-                               round(min(m.nadir for m in lows), 1), tuple(map(_line, lows))))
+                               round(min(m.nadir for m in lows), 1), tuple(map(_line, lows)), _traces(rest, lows)))
         elif rest and consistent(len(highs), len(rest), HIGH_SHARE):
             out.append(Finding("carb_ratio", window, "stronger", len(rest), len(highs),
-                               round(median(m.end - m.start for m in highs), 1), tuple(map(_line, highs))))
+                               round(median(m.end - m.start for m in highs), 1), tuple(map(_line, highs)),
+                               _traces(rest, highs)))
     return out
 
 
@@ -77,5 +84,6 @@ def pre_bolus(ms: list[Meal]) -> list[Finding]:
         timing = [m for m in group if is_timing(m)]
         if consistent(len(timing), len(group), TIMING_SHARE):
             out.append(Finding("pre_bolus", window, "", len(group), len(timing),
-                               round(median(m.peak - m.start for m in timing), 1), tuple(map(_line, timing))))
+                               round(median(m.peak - m.start for m in timing), 1), tuple(map(_line, timing)),
+                               _traces(group, timing)))
     return out

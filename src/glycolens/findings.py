@@ -14,6 +14,13 @@ class Finding:
     hits: int  # events showing the pattern
     metric: float  # the rule's headline number
     evidence: tuple[str, ...]
+    # One per event the rule judged, for graphs: {t0, hit, points: [[minutes after t0, mmol]], ...rule extras}
+    traces: tuple[dict, ...] = ()
+
+
+def trace(series, t0: datetime, minutes: int) -> list[list]:
+    """Glucose from t0 to t0 + minutes as [[minutes after t0, mmol]] pairs."""
+    return [[round((t - t0) / timedelta(minutes=1)), v] for t, v in series.items(t0, t0 + timedelta(minutes=minutes + 1))]
 
 
 def consistent(hits: int, events: int, share: float) -> bool:

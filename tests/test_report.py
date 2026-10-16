@@ -78,3 +78,11 @@ def test_possible_sensor_lows_are_listed():
                      sensor_lows=[synth.START + timedelta(hours=21)])
     assert r["possible_sensor_lows"] == ["2026-01-05T21:00:00"]
     assert "Possible sensor lows" in report.to_markdown({**r, "summary": ""})
+
+
+def test_findings_carry_traces_for_graphs_but_not_into_text_outputs():
+    from glycolens import narrate
+    r = make_report()
+    assert len(r["findings"][0]["traces"]) == 14
+    json.dumps(r)
+    assert "points" not in narrate.source(r) and "points" not in report.to_markdown({**r, "summary": ""})

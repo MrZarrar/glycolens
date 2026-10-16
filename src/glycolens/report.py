@@ -54,7 +54,8 @@ def build(*, now: datetime, start: datetime, end: datetime, through: datetime, s
                     for w in windows],
         "agp": agp,
         "findings": [{"rule": f.rule, "window": f.window, "direction": f.direction, "events": f.events,
-                      "hits": f.hits, "metric": f.metric, "text": finding_text(f), "evidence": list(f.evidence)}
+                      "hits": f.hits, "metric": f.metric, "text": finding_text(f), "evidence": list(f.evidence),
+                      "traces": [{**t, "t0": iso(t["t0"])} for t in f.traces]}
                      for f in findings],
         "suggestions": [{"id": s.id, "window": s.window, "setting": s.setting, "direction": s.direction,
                          "current": s.current, "proposed": s.proposed, "step_pct": round(STEP * 100),

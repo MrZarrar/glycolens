@@ -49,3 +49,9 @@ def test_a_rise_after_a_correction_is_not_evidence_about_isf():
 def test_corrections_that_fall_short_ask_for_a_stronger_isf():
     (f,) = run(synth.make("weak_isf"))
     assert (f.rule, f.window, f.direction) == ("isf", "dinner", "stronger")
+
+
+def test_isf_finding_carries_each_correction_curve():
+    (f,) = run(synth.make("strong_isf"))
+    assert len(f.traces) == 7 and all(t["expected_drop"] == 2.0 and t["units"] == 1.0 for t in f.traces)
+    assert f.traces[0]["points"][-1][0] == 300

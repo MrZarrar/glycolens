@@ -43,3 +43,9 @@ def test_nights_that_start_high_are_not_basal_tests():
     data = synth.make("night_basal_low")
     data.glucose = [Glucose(g.ts, g.mmol + 5.0) for g in data.glucose]
     assert run(data) == []
+
+
+def test_basal_finding_carries_hourly_delivery_per_night():
+    (f,) = run(synth.make("night_basal_low"))
+    assert len(f.traces) == 14
+    assert f.traces[0]["basal"] == [[h * 60, 1.4] for h in range(6)] and f.traces[0]["points"][-1][0] == 360

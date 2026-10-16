@@ -111,7 +111,11 @@ the run still succeeds.
 ## Outputs
 
 - `report.json` — versioned schema (`schema_version`), with baseline stats, AGP, findings,
-  suggestions, past-change outcomes, `data_through` and a `stale_since` field.
+  suggestions, past-change outcomes, `data_through` and a `stale_since` field. Each finding carries
+  `traces` for graphs: one per event the rule judged, `{t0, hit, points: [[minutes after t0, mmol]]}`,
+  plus `carbs` (meals), `units` and `expected_drop` (corrections, 5 h), `ratio` and hourly
+  `basal: [[minute, delivered/programmed]]` (basal windows), `minutes` (exercise sessions, +6 h).
+  Traces never go into `weekly.md` or the LLM summary input.
 - `weekly.md` — summary only (stats, findings, suggestions, outcomes; never raw readings), written to
   `MindVault/inbox/` with frontmatter `title, tags: [], created, source: noctis-health`. Behind
   `--vault`, **off by default**; enabling it is a deploy-time owner decision.

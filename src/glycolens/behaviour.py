@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from glycolens.findings import Finding, consistent, exercise_spans
+from glycolens.findings import Finding, consistent, exercise_spans, trace
 from glycolens.model import Data
 from glycolens.series import Series
 
@@ -17,5 +17,9 @@ def exercise_low(data: Data, series: Series) -> list[Finding]:
             lows.append((s, min(after)))
     if not consistent(len(lows), len(sessions) or 1, EXERCISE_SHARE):
         return []
+    hit = {s for s, _ in lows}
+    traces = tuple({"t0": s, "hit": s in hit, "minutes": round((e - s) / timedelta(minutes=1)),
+                    "points": trace(series, s, round((e + AFTER_EXERCISE - s) / timedelta(minutes=1)))}
+                   for s, e in sessions)
     return [Finding("exercise_low", "all", "", len(sessions), len(lows), round(min(m for _, m in lows), 1),
-                    tuple(f"{s:%a %d %b %H:%M}: low of {m:.1f} within 6h" for s, m in lows))]
+                    tuple(f"{s:%a %d %b %H:%M}: low of {m:.1f} within 6h" for s, m in lows), traces)]

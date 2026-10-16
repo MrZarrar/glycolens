@@ -1,7 +1,7 @@
 from datetime import datetime, time, timedelta
 from statistics import median
 
-from glycolens.findings import Finding, consistent, exercise_spans, user_boluses
+from glycolens.findings import Finding, consistent, exercise_spans, trace, user_boluses
 from glycolens.model import Basal, Data
 from glycolens.series import Series
 
@@ -31,7 +31,7 @@ def basal(data: Data, series: Series, windows) -> list[Finding]:
     days = sorted({g.ts.date() for g in data.glucose})
     out = []
     for w in windows:
-        under, over, n, ratios = [], [], 0, []
+        under, over, n, ratios, nights = [], [], 0, [], []
         for d in days:
             a = datetime.combine(d, time()) + timedelta(minutes=w.start)
             b = datetime.combine(d, time()) + timedelta(minutes=w.end)
@@ -47,12 +47,23 @@ def basal(data: Data, series: Series, windows) -> list[Finding]:
             n += 1
             ratios.append(ratio)
             line = f"{a:%a %d %b} {w.name}: basal ran at {ratio:.0%} of programmed, glucose {ga:.1f} → {gb:.1f}"
+            hourly = [[m, delivered_ratio(data.basal, a + timedelta(minutes=m), min(a + timedelta(minutes=m + 60), b))]
+                      for m in range(0, w.end - w.start, 60)]
+            nights.append({"t0": a, "ratio": ratio, "basal": hourly, "points": trace(series, a, w.end - w.start)})
             if ratio >= HIGH_RATIO:
                 under.append(line)
+                nights[-1]["kind"] = "under"
             elif ratio <= LOW_RATIO:
                 over.append(line)
+                nights[-1]["kind"] = "over"
+
+        def traces(kind):
+            return tuple({**{k: v for k, v in t.items() if k != "kind"}, "hit": t.get("kind") == kind} for t in nights)
+
         if n and consistent(len(over), n, SHARE):
-            out.append(Finding("basal", w.name, "weaker", n, len(over), round(median(ratios), 2), tuple(over)))
+            out.append(Finding("basal", w.name, "weaker", n, len(over), round(median(ratios), 2), tuple(over),
+                               traces("over")))
         elif n and consistent(len(under), n, SHARE):
-            out.append(Finding("basal", w.name, "stronger", n, len(under), round(median(ratios), 2), tuple(under)))
+            out.append(Finding("basal", w.name, "stronger", n, len(under), round(median(ratios), 2), tuple(under),
+                               traces("under")))
     return out

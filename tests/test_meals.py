@@ -55,3 +55,11 @@ def test_only_meals_dosed_with_the_current_ratio_count():
     ms = meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS)
     (f,) = meals.carb_ratio(ms)
     assert f.events == 4
+
+
+def test_carb_ratio_finding_carries_a_curve_per_meal():
+    data = synth.make("weak_breakfast")
+    (f,) = meals.carb_ratio(meals.meals(data, Series(data.glucose), DEFAULT_WINDOWS))
+    assert len(f.traces) == 14 and all(t["hit"] and t["carbs"] == 45.0 for t in f.traces)
+    pts = f.traces[0]["points"]
+    assert pts[0] == [0, 6.5] and pts[-1][0] == 240 and len(pts) == 49
